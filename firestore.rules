@@ -1,0 +1,236 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Hardened global helper primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidTimestamp(ts) {
+      return ts is timestamp && ts <= request.time;
+    }
+
+    function isOptionalString(data, key, maxLen) {
+      return !(key in data) || data[key] == null || (data[key] is string && data[key].size() <= maxLen);
+    }
+
+    // 1. UserProfile validation helper
+    function isValidUserProfile(data) {
+      return data.userId is string &&
+             data.userId == request.auth.uid &&
+             data.displayName is string &&
+             data.displayName.size() >= 1 &&
+             data.displayName.size() <= 80 &&
+             isOptionalString(data, 'email', 120) &&
+             isOptionalString(data, 'phone', 20) &&
+             isOptionalString(data, 'businessName', 100) &&
+             isOptionalString(data, 'district', 60) &&
+             isOptionalString(data, 'address', 250) &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    // 2. KhataEntry validation helper
+    function isValidKhataEntry(data) {
+      return data.customerName is string &&
+             data.customerName.size() >= 1 &&
+             data.customerName.size() <= 80 &&
+             isOptionalString(data, 'customerPhone', 20) &&
+             data.entryType is string &&
+             data.entryType in ['GAVE', 'GOT'] &&
+             (data.amount is number) &&
+             data.amount > 0 &&
+             data.amount <= 100000000 &&
+             isOptionalString(data, 'note', 200) &&
+             data.settled is bool &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    // 3. ShopOrder validation helper
+    function isValidShopOrder(data) {
+      return data.orderNumber is string &&
+             data.orderNumber.size() >= 3 &&
+             data.orderNumber.size() <= 40 &&
+             data.itemsSummary is string &&
+             data.itemsSummary.size() >= 1 &&
+             data.itemsSummary.size() <= 300 &&
+             data.itemCount is int &&
+             data.itemCount >= 1 &&
+             data.itemCount <= 100 &&
+             (data.totalAmount is number) &&
+             data.totalAmount > 0 &&
+             data.totalAmount <= 10000000 &&
+             data.paymentMethod is string &&
+             data.paymentMethod in ['COD', 'UPI', 'CARD'] &&
+             data.deliveryAddress is string &&
+             data.deliveryAddress.size() >= 3 &&
+             data.deliveryAddress.size() <= 250 &&
+             data.status is string &&
+             data.status in ['PLACED', 'SHIPPED', 'DELIVERED', 'CANCELLED'] &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    // 4. ServiceTransaction validation helper
+    function isValidServiceTransaction(data) {
+      return data.category is string &&
+             data.category in ['AEPS', 'BANKING', 'PAN', 'RECHARGE', 'CASH_TALLY', 'ORDER'] &&
+             data.title is string &&
+             data.title.size() >= 1 &&
+             data.title.size() <= 100 &&
+             isOptionalString(data, 'subtitle', 200) &&
+             data.referenceId is string &&
+             data.referenceId.size() >= 3 &&
+             data.referenceId.size() <= 60 &&
+             (data.amount is number) &&
+             data.amount >= 0 &&
+             data.amount <= 100000000 &&
+             data.status is string &&
+             data.status in ['SUCCESS', 'PENDING', 'FAILED'] &&
+             isValidTimestamp(data.createdAt);
+    }
+
+    // 5. SavedArticle validation helper
+    function isValidSavedArticle(data) {
+      return data.title is string &&
+             data.title.size() >= 1 &&
+             data.title.size() <= 250 &&
+             data.source is string &&
+             data.source.size() >= 1 &&
+             data.source.size() <= 100 &&
+             data.region is string &&
+             data.region in ['LOCAL', 'BIHAR', 'NATIONAL'] &&
+             isOptionalString(data, 'link', 500) &&
+             isOptionalString(data, 'pubDate', 80) &&
+             isValidTimestamp(data.createdAt);
+    }
+
+    // User profile (PII strictly isolated to owner)
+    match /users/{userId} {
+      allow get: if isOwner(userId) && isValidId(userId);
+      allow list: if false;
+
+      allow create: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       incoming().keys().hasAll(['userId', 'displayName', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['userId', 'displayName', 'email', 'phone', 'businessName', 'district', 'address', 'createdAt', 'updatedAt']) &&
+                       isValidUserProfile(incoming());
+
+      allow update: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       isValidUserProfile(incoming()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'email', 'phone', 'businessName', 'district', 'address', 'updatedAt']);
+
+      allow delete: if isOwner(userId) && isValidId(userId);
+
+      // Business Tools: Hisab Kitab Ledger
+      match /khataEntries/{entryId} {
+        allow get: if isOwner(userId) && isValidId(entryId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(entryId) &&
+                         incoming().keys().hasAll(['customerName', 'entryType', 'amount', 'settled', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['customerName', 'customerPhone', 'entryType', 'amount', 'note', 'settled', 'createdAt', 'updatedAt']) &&
+                         isValidKhataEntry(incoming());
+
+        allow update: if isOwner(userId) &&
+                         isValidId(entryId) &&
+                         isValidKhataEntry(incoming()) &&
+                         incoming().createdAt == existing().createdAt &&
+                         (
+                           // Action: Toggle settlement status
+                           incoming().diff(existing()).affectedKeys().hasOnly(['settled', 'updatedAt']) ||
+                           // Action: Edit entry details
+                           incoming().diff(existing()).affectedKeys().hasOnly(['customerName', 'customerPhone', 'entryType', 'amount', 'note', 'settled', 'updatedAt'])
+                         );
+
+        allow delete: if isOwner(userId) && isValidId(entryId);
+      }
+
+      // E-Commerce Orders (with terminal state locking on DELIVERED and CANCELLED)
+      match /orders/{orderId} {
+        allow get: if isOwner(userId) && isValidId(orderId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(orderId) &&
+                         incoming().keys().hasAll(['orderNumber', 'itemsSummary', 'itemCount', 'totalAmount', 'paymentMethod', 'deliveryAddress', 'status', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['orderNumber', 'itemsSummary', 'itemCount', 'totalAmount', 'paymentMethod', 'deliveryAddress', 'status', 'createdAt', 'updatedAt']) &&
+                         incoming().status == 'PLACED' &&
+                         isValidShopOrder(incoming());
+
+        allow update: if isOwner(userId) &&
+                         isValidId(orderId) &&
+                         isValidShopOrder(incoming()) &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().orderNumber == existing().orderNumber &&
+                         existing().status != 'DELIVERED' &&
+                         existing().status != 'CANCELLED' &&
+                         (
+                           // Action: Advance or cancel order status
+                           incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt'])
+                         );
+
+        allow delete: if isOwner(userId) && isValidId(orderId);
+      }
+
+      // Banking (AEPS/Banking), Digital Services (PAN/Recharge), Cash Tally & Order History
+      match /transactions/{transactionId} {
+        allow get: if isOwner(userId) && isValidId(transactionId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(transactionId) &&
+                         incoming().keys().hasAll(['category', 'title', 'referenceId', 'amount', 'status', 'createdAt']) &&
+                         incoming().keys().hasOnly(['category', 'title', 'subtitle', 'referenceId', 'amount', 'status', 'createdAt']) &&
+                         isValidServiceTransaction(incoming());
+
+        allow update: if false;
+
+        allow delete: if isOwner(userId) && isValidId(transactionId);
+      }
+
+      // Bookmarked News Articles
+      match /savedArticles/{articleId} {
+        allow get: if isOwner(userId) && isValidId(articleId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(articleId) &&
+                         incoming().keys().hasAll(['title', 'source', 'region', 'createdAt']) &&
+                         incoming().keys().hasOnly(['title', 'source', 'region', 'link', 'pubDate', 'createdAt']) &&
+                         isValidSavedArticle(incoming());
+
+        allow update: if false;
+
+        allow delete: if isOwner(userId) && isValidId(articleId);
+      }
+    }
+  }
+}

@@ -1,0 +1,22 @@
+<resources>
+    <string name="app_name">Bihar Seva</string>
+    <string name="app_tagline">सुपर ऐप • समाचार, खरीदारी, बैंकिंग व स्मार्ट टूल्स</string>
+    <string name="auth_welcome_title">Bihar Seva में आपका स्वागत है</string>
+    <string name="auth_welcome_subtitle">एक ही ऐप में समाचार, ऑनलाइन खरीदारी, बैंकिंग सेवाएं, हिसाब किताब और स्मार्ट टूल्स।</string>
+    <string name="auth_sign_in_google">Google से साइन इन करें (Sign in with Google)</string>
+    <string name="auth_cloud_sync_note">आपका प्रोफाइल, ऑर्डर, हिस्ट्री और हिसाब किताब सुरक्षित क्लाउड में सेव रहेगा।</string>
+    <string name="nav_home">मेन्यू</string>
+    <string name="nav_news">समाचार</string>
+    <string name="nav_shop">खरीदारी</string>
+    <string name="nav_services">सेवाएं</string>
+    <string name="nav_account">मेरा खाता</string>
+    <string name="section_news">News • समाचार</string>
+    <string name="section_ecommerce">E-Commerce • ऑनलाइन खरीदारी</string>
+    <string name="section_banking">Banking • AEPS व बैंकिंग</string>
+    <string name="section_digital">Digital Services • PAN व रिचार्ज</string>
+    <string name="section_tools">Tools • कैलकुलेटर व कैश काउंटर</string>
+    <string name="section_personal">Personal Tools • आयु कैलकुलेटर</string>
+    <string name="section_business">Business Tools • हिसाब किताब</string>
+    <string name="section_account">My Account • प्रोफाइल, ऑर्डर, हिस्ट्री</string>
+    <string name="section_settings">Settings • सेटिंग्स व पसंद</string>
+</resources>

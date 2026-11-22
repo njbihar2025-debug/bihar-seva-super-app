@@ -1,0 +1,247 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Authenticated user's profile and regional details.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the owner."
+        },
+        "displayName": {
+          "type": "string",
+          "description": "User full name."
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Optional user email address."
+        },
+        "phone": {
+          "type": "string",
+          "description": "Optional contact phone number."
+        },
+        "businessName": {
+          "type": "string",
+          "description": "Optional shop or business name for Hisab Kitab."
+        },
+        "district": {
+          "type": "string",
+          "description": "Preferred Bihar district for local news and delivery."
+        },
+        "address": {
+          "type": "string",
+          "description": "Optional delivery address."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp written via FieldValue.serverTimestamp()."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp written via FieldValue.serverTimestamp()."
+        }
+      },
+      "required": ["userId", "displayName", "createdAt", "updatedAt"]
+    },
+    "KhataEntry": {
+      "title": "KhataEntry",
+      "description": "Business Hisab Kitab credit/debit customer ledger entry.",
+      "type": "object",
+      "properties": {
+        "customerName": {
+          "type": "string",
+          "description": "Customer or party name."
+        },
+        "customerPhone": {
+          "type": "string",
+          "description": "Optional customer phone number."
+        },
+        "entryType": {
+          "type": "string",
+          "enum": ["GAVE", "GOT"],
+          "description": "GAVE means money/credit given (receivable); GOT means money received (payable)."
+        },
+        "amount": {
+          "type": "number",
+          "description": "Transaction amount in INR."
+        },
+        "note": {
+          "type": "string",
+          "description": "Optional item or bill note."
+        },
+        "settled": {
+          "type": "boolean",
+          "description": "Whether this ledger entry has been settled."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp written via FieldValue.serverTimestamp()."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp written via FieldValue.serverTimestamp()."
+        }
+      },
+      "required": ["customerName", "entryType", "amount", "settled", "createdAt", "updatedAt"]
+    },
+    "ShopOrder": {
+      "title": "ShopOrder",
+      "description": "E-Commerce order placed by the user.",
+      "type": "object",
+      "properties": {
+        "orderNumber": {
+          "type": "string",
+          "description": "Unique human-readable order number."
+        },
+        "itemsSummary": {
+          "type": "string",
+          "description": "Summary of ordered products and quantities."
+        },
+        "itemCount": {
+          "type": "integer",
+          "description": "Total number of items in the order."
+        },
+        "totalAmount": {
+          "type": "number",
+          "description": "Total payable amount in INR."
+        },
+        "paymentMethod": {
+          "type": "string",
+          "enum": ["COD", "UPI", "CARD"],
+          "description": "Selected payment mode."
+        },
+        "deliveryAddress": {
+          "type": "string",
+          "description": "Shipping address."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["PLACED", "SHIPPED", "DELIVERED", "CANCELLED"],
+          "description": "Current fulfillment status."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp written via FieldValue.serverTimestamp()."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp written via FieldValue.serverTimestamp()."
+        }
+      },
+      "required": [
+        "orderNumber",
+        "itemsSummary",
+        "itemCount",
+        "totalAmount",
+        "paymentMethod",
+        "deliveryAddress",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "ServiceTransaction": {
+      "title": "ServiceTransaction",
+      "description": "History receipt for AEPS, Banking, PAN, Recharge, Cash Tally, or Order activity.",
+      "type": "object",
+      "properties": {
+        "category": {
+          "type": "string",
+          "enum": ["AEPS", "BANKING", "PAN", "RECHARGE", "CASH_TALLY", "ORDER"],
+          "description": "Service category."
+        },
+        "title": {
+          "type": "string",
+          "description": "Receipt title."
+        },
+        "subtitle": {
+          "type": "string",
+          "description": "Optional transaction details."
+        },
+        "referenceId": {
+          "type": "string",
+          "description": "Generated receipt or tracking reference code."
+        },
+        "amount": {
+          "type": "number",
+          "description": "Transaction amount in INR (0 for non-monetary requests)."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["SUCCESS", "PENDING", "FAILED"],
+          "description": "Recorded status."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp written via FieldValue.serverTimestamp()."
+        }
+      },
+      "required": ["category", "title", "referenceId", "amount", "status", "createdAt"]
+    },
+    "SavedArticle": {
+      "title": "SavedArticle",
+      "description": "News article bookmarked by the user.",
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "Headline of the news article."
+        },
+        "source": {
+          "type": "string",
+          "description": "Publisher or outlet name."
+        },
+        "region": {
+          "type": "string",
+          "enum": ["LOCAL", "BIHAR", "NATIONAL"],
+          "description": "Regional section."
+        },
+        "link": {
+          "type": "string",
+          "description": "Optional external article URL."
+        },
+        "pubDate": {
+          "type": "string",
+          "description": "Optional formatted publication date."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp written via FieldValue.serverTimestamp()."
+        }
+      },
+      "required": ["title", "source", "region", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Owner-isolated user profile document."
+    },
+    "/users/{userId}/khataEntries/{entryId}": {
+      "schema": { "$ref": "#/entities/KhataEntry" },
+      "description": "Owner-isolated business Hisab Kitab entries."
+    },
+    "/users/{userId}/orders/{orderId}": {
+      "schema": { "$ref": "#/entities/ShopOrder" },
+      "description": "Owner-isolated E-Commerce orders."
+    },
+    "/users/{userId}/transactions/{transactionId}": {
+      "schema": { "$ref": "#/entities/ServiceTransaction" },
+      "description": "Owner-isolated digital service, banking, and cash tally history."
+    },
+    "/users/{userId}/savedArticles/{articleId}": {
+      "schema": { "$ref": "#/entities/SavedArticle" },
+      "description": "Owner-isolated bookmarked news articles."
+    }
+  }
+}

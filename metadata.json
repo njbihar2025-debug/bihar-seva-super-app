@@ -1,0 +1,6 @@
+{
+  "name": "Bihar Seva",
+  "description": "An all-in-one regional Super App featuring Local, Bihar & National News, E-Commerce, Banking & AEPS services, PAN & Recharge digital services, Utility & Personal Calculators, Business Hisab Kitab ledger, Account management, and custom Settings.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
